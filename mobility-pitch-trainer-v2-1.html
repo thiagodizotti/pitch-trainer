@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mobility Pitch Trainer</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --red: #E30613; --red-dark: #C00510; --black: #111111;
+    --text: #4F4F4F; --border: #D9D9D9; --bg: #F5F5F5;
+    --white: #FFFFFF; --shadow: 0 2px 16px rgba(0,0,0,0.08);
+    --shadow-hover: 0 6px 24px rgba(0,0,0,0.13);
+    --radius: 16px; --radius-btn: 12px;
+  }
+  html, body { font-family: 'Montserrat', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-tap-highlight-color: transparent; }
+  #app { max-width: 480px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
+  .screen { display: none; flex-direction: column; flex: 1; padding: 0 20px 32px; }
+  .screen.active { display: flex; }
+  .topbar { position: sticky; top: 0; background: var(--white); border-bottom: 1px solid var(--border); padding: 16px 20px; display: flex; align-items: center; gap: 12px; z-index: 100; }
+  .topbar-back { width: 36px; height: 36px; border-radius: 10px; border: 1.5px solid var(--border); background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: background 0.15s; font-size: 18px; }
+  .topbar-back:hover { background: var(--bg); }
+  .topbar-title { font-size: 16px; font-weight: 700; color: var(--black); flex: 1; }
+  h1 { font-size: 28px; font-weight: 800; color: var(--black); line-height: 1.2; }
+  h2 { font-size: 22px; font-weight: 700; color: var(--black); }
+  .card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; transition: transform 0.18s ease, box-shadow 0.18s ease; }
+  .btn { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; border-radius: var(--radius-btn); font-family: 'Montserrat', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all 0.18s ease; width: 100%; padding: 0 20px; }
+  .btn-primary { background: var(--red); color: var(--white); }
+  .btn-primary:active, .btn-primary:hover { background: var(--red-dark); }
+  .btn-secondary { background: var(--white); color: var(--black); border: 1.5px solid var(--border); }
+  .btn-secondary:hover { background: var(--bg); }
+  .btn-ghost { background: transparent; color: var(--red); border: 1.5px solid var(--red); }
+  .btn-ghost:hover { background: #fff0f0; }
+  .btn-sm { min-height: 38px; font-size: 13px; border-radius: 10px; padding: 0 14px; width: auto; flex: 1; }
+  .progress-wrap { display: flex; flex-direction: column; gap: 6px; }
+  .progress-label { display: flex; justify-content: space-between; align-items: center; }
+  .progress-track { width: 100%; height: 8px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--red); border-radius: 99px; transition: width 0.5s ease; }
+  .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 700; }
+  .badge-red { background: #fde8e9; color: var(--red); }
+  .badge-gray { background: var(--bg); color: var(--text); }
+  .mt-8 { margin-top: 8px; } .mt-12 { margin-top: 12px; } .mt-16 { margin-top: 16px; } .mt-24 { margin-top: 24px; } .mt-32 { margin-top: 32px; }
+  .flex { display: flex; } .flex-col { flex-direction: column; } .gap-12 { gap: 12px; } .gap-16 { gap: 16px; } .gap-24 { gap: 24px; }
+  .scroll-list { display: flex; flex-direction: column; gap: 12px; }
+  .section-title { font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text); margin-bottom: 12px; }
+
+  /* LOGIN */
+  .login-wrap { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 40px 20px; gap: 32px; }
+  .login-logo { text-align: center; }
+  .login-logo .icon { font-size: 56px; margin-bottom: 12px; }
+  .login-logo h1 { font-size: 26px; color: var(--black); }
+  .login-logo p { font-size: 14px; color: var(--text); margin-top: 8px; }
+  .login-card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+  .login-label { font-size: 14px; font-weight: 700; color: var(--black); margin-bottom: 6px; }
+  .login-input { width: 100%; border: 1.5px solid var(--border); border-radius: 12px; padding: 14px 16px; font-family: 'Montserrat', sans-serif; font-size: 15px; color: var(--black); outline: none; transition: border-color 0.15s; background: var(--white); }
+  .login-input:focus { border-color: var(--red); }
+  .avatar-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .avatar-btn { background: var(--bg); border: 2px solid transparent; border-radius: 12px; padding: 12px 8px; text-align: center; cursor: pointer; font-size: 22px; transition: all 0.15s; }
+  .avatar-btn:hover { border-color: var(--border); }
+  .avatar-btn.selected { border-color: var(--red); background: #fde8e9; }
+
+  /* HOME */
+  .home-header { background: var(--black); margin: 0 -20px; padding: 40px 20px 32px; color: var(--white); }
+  .home-header .tagline { font-size: 14px; font-weight: 600; color: var(--red); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+  .home-header h1 { color: var(--white); margin-bottom: 4px; }
+  .home-header .subtitle { font-size: 14px; color: rgba(255,255,255,0.6); margin-top: 6px; }
+  .home-user-chip { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.12); border-radius: 99px; padding: 6px 14px; margin-top: 16px; }
+  .home-user-chip span { font-size: 13px; color: rgba(255,255,255,0.8); font-weight: 600; }
+  .home-progress-card { background: rgba(255,255,255,0.08); border-radius: 14px; padding: 16px; margin-top: 16px; }
+  .home-progress-card .progress-track { background: rgba(255,255,255,0.15); }
+  .home-progress-card .small { color: rgba(255,255,255,0.6); font-size: 13px; }
+  .home-progress-card strong { color: var(--white); font-size: 18px; }
+  .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px; }
+  .mode-card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px 16px; cursor: pointer; transition: transform 0.18s, box-shadow 0.18s; display: flex; flex-direction: column; gap: 8px; border: 2px solid transparent; }
+  .mode-card:hover { transform: scale(1.02); box-shadow: var(--shadow-hover); border-color: var(--red); }
+  .mode-card.full { grid-column: 1 / -1; flex-direction: row; align-items: center; }
+  .mode-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .mode-icon-red { background: #fde8e9; } .mode-icon-blue { background: #e8f0fe; } .mode-icon-orange { background: #fff3e8; }
+  .mode-title { font-size: 15px; font-weight: 700; color: var(--black); }
+  .mode-desc { font-size: 13px; color: var(--text); line-height: 1.4; }
+
+  /* THEMES */
+  .theme-item { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 20px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: transform 0.18s, box-shadow 0.18s; border: 2px solid transparent; }
+  .theme-item:hover { transform: scale(1.01); box-shadow: var(--shadow-hover); border-color: var(--border); }
+  .theme-dot { width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+  .theme-info { flex: 1; }
+  .theme-name { font-size: 15px; font-weight: 700; color: var(--black); }
+  .theme-count { font-size: 13px; color: var(--text); margin-top: 2px; }
+  .theme-arrow { color: var(--border); font-size: 18px; }
+
+  /* QUESTIONS */
+  .question-card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .question-text { font-size: 15px; font-weight: 600; color: var(--black); line-height: 1.5; }
+  .question-actions { display: flex; gap: 8px; }
+  .q-confidence-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+
+  /* DETAIL */
+  .detail-question { background: var(--black); color: var(--white); border-radius: var(--radius); padding: 24px; font-size: 17px; font-weight: 700; line-height: 1.5; }
+  .answer-block { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; border-left: 4px solid var(--red); display: none; }
+  .answer-block.visible { display: block; }
+  .answer-label { font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--red); margin-bottom: 10px; }
+  .answer-text { font-size: 15px; line-height: 1.6; color: var(--text); }
+  .notes-label { font-size: 13px; font-weight: 700; color: var(--black); margin-bottom: 8px; }
+  textarea.notes-field { width: 100%; border: 1.5px solid var(--border); border-radius: 12px; padding: 14px; font-family: 'Montserrat', sans-serif; font-size: 14px; color: var(--black); resize: none; outline: none; min-height: 90px; transition: border-color 0.15s; background: var(--white); }
+  textarea.notes-field:focus { border-color: var(--red); }
+  .conf-selector { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .conf-btn { padding: 10px 8px; border-radius: 10px; font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; border: 2px solid var(--border); background: var(--white); text-align: center; transition: all 0.15s; }
+  .conf-btn[data-val="low"] { color: var(--red); }
+  .conf-btn[data-val="mid"] { color: #b45309; }
+  .conf-btn[data-val="high"] { color: #16a34a; }
+  .conf-btn.selected[data-val="low"] { background: #fde8e9; border-color: var(--red); }
+  .conf-btn.selected[data-val="mid"] { background: #fef9e7; border-color: #f59e0b; }
+  .conf-btn.selected[data-val="high"] { background: #e6f9f0; border-color: #16a34a; }
+
+  /* SIM */
+  .sim-theme-label { font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text); }
+  .sim-question { background: var(--black); color: var(--white); border-radius: var(--radius); padding: 28px 24px; font-size: 18px; font-weight: 700; line-height: 1.55; min-height: 140px; display: flex; align-items: flex-start; }
+
+  /* PRESSURE */
+  .pressure-screen-inner { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 32px; }
+  .timer-circle { width: 110px; height: 110px; border-radius: 50%; background: var(--white); box-shadow: var(--shadow-hover); display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto; position: relative; }
+  .timer-num { font-size: 36px; font-weight: 800; color: var(--red); line-height: 1; }
+  .timer-sec { font-size: 12px; font-weight: 600; color: var(--text); }
+  .timer-ring { position: absolute; top: 0; left: 0; width: 110px; height: 110px; transform: rotate(-90deg); }
+  .timer-ring circle { fill: none; stroke: var(--red); stroke-width: 5; stroke-linecap: round; stroke-dasharray: 314; stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear, stroke 0.3s; }
+  .pressure-q { background: var(--black); color: var(--white); border-radius: var(--radius); padding: 24px; font-size: 17px; font-weight: 700; line-height: 1.5; text-align: center; }
+
+  /* DASHBOARD */
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .stat-card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 16px; display: flex; flex-direction: column; gap: 4px; }
+  .stat-value { font-size: 32px; font-weight: 800; color: var(--black); line-height: 1; }
+  .stat-label { font-size: 13px; color: var(--text); }
+  .stat-card.accent .stat-value { color: var(--red); }
+  .weak-item { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--bg); }
+  .weak-item:last-child { border-bottom: none; }
+  .weak-name { font-size: 14px; font-weight: 600; color: var(--black); flex: 1; }
+  .weak-bar-wrap { width: 80px; height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .weak-bar { height: 100%; background: var(--red); border-radius: 99px; }
+
+  /* LOADING */
+  .loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 999; gap: 16px; }
+  .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--red); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 14px; font-weight: 600; color: var(--text); }
+
+  /* TOAST */
+  #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--black); color: var(--white); padding: 12px 20px; border-radius: 99px; font-size: 14px; font-weight: 600; z-index: 9999; transition: transform 0.3s ease; white-space: nowrap; pointer-events: none; }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  .screen.active > * { animation: fadeIn 0.25s ease both; }
+  .screen.active > *:nth-child(2) { animation-delay: 0.04s; }
+  .screen.active > *:nth-child(3) { animation-delay: 0.08s; }
+  .screen.active > *:nth-child(4) { animation-delay: 0.12s; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="toast"></div>
+
+  <!-- LOADING -->
+  <div class="loading-overlay" id="loading">
+    <div class="spinner"></div>
+    <div class="loading-text">Carregando...</div>
+  </div>
+
+  <!-- ══ LOGIN ══ -->
+  <div id="s-login" class="screen">
+    <div class="login-wrap">
+      <div class="login-logo">
+        <div class="icon">🚌</div>
+        <h1>Mobility Pitch<br>Trainer</h1>
+        <p>Treine para reuniões de mobilidade urbana</p>
+      </div>
+      <div class="login-card">
+        <div>
+          <div class="login-label">Qual é o seu nome?</div>
+          <input type="text" class="login-input" id="login-name" placeholder="Ex: Carlos, Ana..." maxlength="30" />
+        </div>
+        <div>
+          <div class="login-label" style="margin-bottom:10px">Escolha um avatar</div>
+          <div class="avatar-grid" id="avatar-grid"></div>
+        </div>
+        <button class="btn btn-primary" onclick="doLogin()">Entrar →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ HOME ══ -->
+  <div id="s-home" class="screen">
+    <div class="home-header">
+      <div class="tagline">Simulador de Pitch</div>
+      <h1>Mobility Pitch<br>Trainer</h1>
+      <div class="subtitle">Treine para reuniões com clientes de mobilidade urbana</div>
+      <div class="home-user-chip">
+        <span id="home-avatar"></span>
+        <span id="home-username"></span>
+      </div>
+      <div class="home-progress-card">
+        <div class="progress-label">
+          <span class="small">Progresso geral</span>
+          <strong id="home-pct">0%</strong>
+        </div>
+        <div class="progress-track mt-8">
+          <div class="progress-fill" id="home-bar" style="width:0%"></div>
+        </div>
+        <div class="small mt-8" id="home-stats">0 de 0 perguntas avaliadas</div>
+      </div>
+    </div>
+
+    <div class="mt-24 flex flex-col gap-24">
+      <div>
+        <div class="section-title">Modos de treino</div>
+        <div class="mode-grid">
+          <div class="mode-card" onclick="goStudy()">
+            <div class="mode-icon mode-icon-blue">📖</div>
+            <div><div class="mode-title">Modo Estudo</div><div class="mode-desc">Leia perguntas e respostas</div></div>
+          </div>
+          <div class="mode-card" onclick="goSim()">
+            <div class="mode-icon mode-icon-red">🎯</div>
+            <div><div class="mode-title">Simulação</div><div class="mode-desc">Responda sem ver a dica</div></div>
+          </div>
+          <div class="mode-card full" onclick="goPressure()">
+            <div class="mode-icon mode-icon-orange">⚡</div>
+            <div><div class="mode-title">Modo Pressão</div><div class="mode-desc">30 segundos para responder cada pergunta</div></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="section-title">Temas</div>
+        <div class="scroll-list" id="home-themes"></div>
+      </div>
+      <button class="btn btn-secondary" onclick="openDashboard()">📊 Ver Dashboard</button>
+      <button class="btn btn-ghost" onclick="doLogout()">Trocar usuário</button>
+    </div>
+  </div>
+
+  <!-- ══ TEMAS ══ -->
+  <div id="s-themes" class="screen flex-col">
+    <div class="topbar">
+      <button class="topbar-back" onclick="show('s-home')">&#8592;</button>
+      <span class="topbar-title">Temas</span>
+    </div>
+    <div class="mt-24 scroll-list" id="themes-list"></div>
+  </div>
+
+  <!-- ══ PERGUNTAS ══ -->
+  <div id="s-questions" class="screen flex-col">
+    <div class="topbar">
+      <button class="topbar-back" onclick="show('s-themes')">&#8592;</button>
+      <span class="topbar-title" id="q-list-title">Perguntas</span>
+    </div>
+    <div class="mt-24 scroll-list" id="questions-list"></div>
+  </div>
+
+  <!-- ══ DETALHE ══ -->
+  <div id="s-detail" class="screen flex-col">
+    <div class="topbar">
+      <button class="topbar-back" id="detail-back">&#8592;</button>
+      <span class="topbar-title">Pergunta</span>
+    </div>
+    <div class="mt-24 flex flex-col gap-16">
+      <div class="detail-question" id="detail-q"></div>
+      <button class="btn btn-primary" id="detail-reveal-btn" onclick="revealAnswer()">Mostrar resposta</button>
+      <div class="answer-block" id="detail-answer">
+        <div class="answer-label">Resposta sugerida</div>
+        <div class="answer-text" id="detail-a"></div>
+      </div>
+      <div class="card">
+        <div class="notes-label">Suas anotações</div>
+        <textarea class="notes-field" id="detail-notes" placeholder="Escreva dicas, exemplos ou observações..." rows="3" oninput="saveNote()"></textarea>
+      </div>
+      <div class="card">
+        <div class="notes-label" style="margin-bottom:12px">Seu nível de confiança</div>
+        <div class="conf-selector">
+          <button class="conf-btn" data-val="low" onclick="setConf('low')">😰 Baixa</button>
+          <button class="conf-btn" data-val="mid" onclick="setConf('mid')">🤔 Média</button>
+          <button class="conf-btn" data-val="high" onclick="setConf('high')">💪 Alta</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SIMULAÇÃO ══ -->
+  <div id="s-sim" class="screen flex-col">
+    <div class="topbar">
+      <button class="topbar-back" onclick="show('s-home')">&#8592;</button>
+      <span class="topbar-title">Modo Simulação</span>
+      <div style="margin-left:auto"><span class="badge badge-gray" id="sim-count">1/23</span></div>
+    </div>
+    <div class="mt-24 flex flex-col gap-16" style="flex:1">
+      <div class="sim-theme-label" id="sim-theme-label"></div>
+      <div class="sim-question" id="sim-q"></div>
+      <div class="answer-block" id="sim-answer">
+        <div class="answer-label">Resposta sugerida</div>
+        <div class="answer-text" id="sim-a"></div>
+      </div>
+      <div id="sim-conf-wrap" class="card" style="display:none">
+        <div class="notes-label" style="margin-bottom:12px">Como foi?</div>
+        <div class="conf-selector">
+          <button class="conf-btn" data-val="low" onclick="simSetConf('low')">😰 Baixa</button>
+          <button class="conf-btn" data-val="mid" onclick="simSetConf('mid')">🤔 Média</button>
+          <button class="conf-btn" data-val="high" onclick="simSetConf('high')">💪 Alta</button>
+        </div>
+      </div>
+      <div style="margin-top:auto;display:flex;flex-direction:column;gap:10px">
+        <button class="btn btn-primary" id="sim-reveal-btn" onclick="simReveal()">Mostrar resposta</button>
+        <button class="btn btn-secondary" id="sim-next-btn" onclick="simNext()" style="display:none">Próxima pergunta →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PRESSÃO ══ -->
+  <div id="s-pressure" class="screen flex-col">
+    <div class="topbar">
+      <button class="topbar-back" onclick="stopPressure()">&#8592;</button>
+      <span class="topbar-title">Modo Pressão</span>
+      <div style="margin-left:auto"><span class="badge badge-red" id="pressure-count">1/23</span></div>
+    </div>
+    <div class="pressure-screen-inner">
+      <div class="timer-circle">
+        <svg class="timer-ring" viewBox="0 0 110 110">
+          <circle cx="55" cy="55" r="50" id="timer-ring-circle"/>
+        </svg>
+        <div class="timer-num" id="timer-num">30</div>
+        <div class="timer-sec">seg</div>
+      </div>
+      <div class="pressure-q" id="pressure-q"></div>
+      <div class="answer-block" id="pressure-answer">
+        <div class="answer-label">Resposta sugerida</div>
+        <div class="answer-text" id="pressure-a"></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;padding-top:16px">
+      <button class="btn btn-primary" id="pressure-next-btn" onclick="pressureNext()">Próxima →</button>
+      <button class="btn btn-secondary" onclick="stopPressure()">Encerrar</button>
+    </div>
+  </div>
+
+  <!-- ══ DASHBOARD ══ -->
+  <div id="s-dashboard" class="screen flex-col">
+    <div class="topbar">
+      <button class="topbar-back" onclick="show('s-home')">&#8592;</button>
+      <span class="topbar-title">Dashboard</span>
+    </div>
+    <div class="mt-24 flex flex-col gap-24" id="dashboard-content"></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// SUPABASE CONFIG
+// ══════════════════════════════════════════════
+const SUPABASE_URL = 'https://wflwwqdsdhwmtwfthjjg.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmbHd3cWRzZGh3bXR3ZnRoampnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0OTM4OTIsImV4cCI6MjA5MDA2OTg5Mn0.4A5vwxt8QbNG0UDCC6aTtr76J62-qpORgBovSCCsd78';
+
+async function sbGet(user_name) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/progress?user_name=eq.${encodeURIComponent(user_name)}&select=*`, {
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+  });
+  return res.ok ? res.json() : [];
+}
+
+async function sbUpsert(user_name, question_id, confidence, note) {
+  // Try update first, then insert
+  const checkRes = await fetch(`${SUPABASE_URL}/rest/v1/progress?user_name=eq.${encodeURIComponent(user_name)}&question_id=eq.${encodeURIComponent(question_id)}&select=id`, {
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+  });
+  const existing = checkRes.ok ? await checkRes.json() : [];
+
+  if (existing.length > 0) {
+    await fetch(`${SUPABASE_URL}/rest/v1/progress?id=eq.${existing[0].id}`, {
+      method: 'PATCH',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ confidence, note })
+    });
+  } else {
+    await fetch(`${SUPABASE_URL}/rest/v1/progress`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ user_name, question_id, confidence, note })
+    });
+  }
+}
+
+// ══════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════
+const AVATARS = ['🧑‍💼','👩‍💼','🧑‍💻','👩‍💻','🧑‍🎓','👩‍🎓','🦸','🧑‍🚀'];
+const THEMES = [
+  { id:'t1', name:'Visão Estratégica',        icon:'🗺️', color:'#e8f0fe' },
+  { id:'t2', name:'Implantação e Riscos',     icon:'⚠️', color:'#fff3e8' },
+  { id:'t3', name:'Tecnologia e Integração',  icon:'⚙️', color:'#e8f9f0' },
+  { id:'t4', name:'Governança',               icon:'🏛️', color:'#f3e8ff' },
+  { id:'t5', name:'Experiência do Passageiro',icon:'🚌', color:'#fde8e9' },
+  { id:'t6', name:'Futuro e MaaS',            icon:'🚀', color:'#e8f9f9' },
+  { id:'t7', name:'Capacidade do Fornecedor', icon:'🤝', color:'#fef9e7' },
+  { id:'t8', name:'Perguntas Decisórias',     icon:'🎯', color:'#fde8e9' },
+];
+const QUESTIONS = [
+  { id:'q1',  theme:'t1', q:'Este projeto substitui o sistema atual ou evolui o modelo existente?',      a:'A proposta é de evolução controlada, preservando o modelo atual e ampliando capacidades digitais.' },
+  { id:'q2',  theme:'t1', q:'Qual o principal ganho estratégico para o DF?',                             a:'Melhor governança financeira, melhoria da experiência do passageiro e base para integração futura.' },
+  { id:'q3',  theme:'t1', q:'Este é um projeto de bilhetagem ou mobilidade?',                            a:'É bilhetagem como fundação para evolução da mobilidade digital.' },
+  { id:'q4',  theme:'t1', q:'Qual o primeiro benefício visível?',                                        a:'Expansão de canais digitais e maior controle financeiro.' },
+  { id:'q5',  theme:'t2', q:'Qual o maior risco do projeto?',                                            a:'Integração institucional e tecnológica entre operadores e sistemas existentes.' },
+  { id:'q6',  theme:'t2', q:'Existe risco de interrupção operacional?',                                  a:'Implantação faseada com coexistência de sistemas.' },
+  { id:'q7',  theme:'t2', q:'Qual o plano de contingência?',                                             a:'Ativação progressiva e possibilidade de rollback operacional.' },
+  { id:'q8',  theme:'t2', q:'Qual parte ainda não está totalmente dimensionada?',                        a:'Complexidade das integrações com sistemas legados.' },
+  { id:'q9',  theme:'t3', q:'Será necessário trocar hardware?',                                          a:'Não necessariamente, a solução é agnóstica.' },
+  { id:'q10', theme:'t3', q:'Como integrar operadores com diferentes níveis tecnológicos?',              a:'Uso de APIs e implantação progressiva.' },
+  { id:'q11', theme:'t3', q:'Existe risco de lock-in tecnológico?',                                      a:'Arquitetura baseada em padrões abertos reduz dependência.' },
+  { id:'q12', theme:'t4', q:'Quem será o dono dos dados?',                                               a:'O ente gestor do sistema de mobilidade.' },
+  { id:'q13', theme:'t4', q:'Como funciona o rateio de receitas?',                                       a:'Regras configuráveis automatizadas com auditoria.' },
+  { id:'q14', theme:'t4', q:'Quem operará o sistema?',                                                   a:'Pode ser modelo assistido ou transferência gradual.' },
+  { id:'q15', theme:'t5', q:'O cidadão precisará trocar cartão ou app?',                                 a:'Pode haver coexistência de mídias.' },
+  { id:'q16', theme:'t5', q:'Como garantir adoção digital?',                                             a:'Conveniência + comunicação + incentivos.' },
+  { id:'q17', theme:'t6', q:'Quando o DF pode ter MaaS?',                                                a:'A plataforma cria base tecnológica; evolução depende de estratégia institucional.' },
+  { id:'q18', theme:'t6', q:'Quais serviços podem ser integrados?',                                      a:'Transporte público, mobilidade compartilhada, estacionamento e serviços urbanos.' },
+  { id:'q19', theme:'t7', q:'Qual experiência local vocês possuem?',                                     a:'Presença local e capacidade de adaptação regulatória.' },
+  { id:'q20', theme:'t7', q:'Como será transferência de conhecimento?',                                  a:'Plano estruturado de capacitação e documentação.' },
+  { id:'q21', theme:'t8', q:'Por que escolher vocês e não desenvolver internamente?',                    a:'Plataforma já testada reduz risco e acelera resultados.' },
+  { id:'q22', theme:'t8', q:'Qual parte do projeto vocês não controlam?',                                a:'Governança institucional e decisões regulatórias.' },
+  { id:'q23', theme:'t8', q:'Se o projeto parar no meio, o que permanece?',                              a:'Melhorias já implantadas permanecem operacionais.' },
+];
+
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+let currentUser = null;
+let selectedAvatar = AVATARS[0];
+let progressCache = {}; // { qid: { confidence, note } }
+let currentQId = null;
+let currentThemeId = null;
+let noteTimeout = null;
+
+function getConf(qid) { return progressCache[qid]?.confidence || 'none'; }
+function getNote(qid) { return progressCache[qid]?.note || ''; }
+
+async function loadUserProgress(user_name) {
+  showLoading(true);
+  try {
+    const rows = await sbGet(user_name);
+    progressCache = {};
+    rows.forEach(r => { progressCache[r.question_id] = { confidence: r.confidence, note: r.note }; });
+  } catch(e) { console.error(e); }
+  showLoading(false);
+}
+
+async function saveProgress(qid, confidence, note) {
+  progressCache[qid] = { confidence, note };
+  try { await sbUpsert(currentUser.name, qid, confidence, note); }
+  catch(e) { console.error('Erro ao salvar:', e); }
+}
+
+// ══════════════════════════════════════════════
+// LOGIN
+// ══════════════════════════════════════════════
+function initAvatarGrid() {
+  const grid = document.getElementById('avatar-grid');
+  grid.innerHTML = AVATARS.map((a,i) =>
+    `<div class="avatar-btn${i===0?' selected':''}" onclick="selectAvatar('${a}',this)">${a}</div>`
+  ).join('');
+}
+
+function selectAvatar(avatar, el) {
+  selectedAvatar = avatar;
+  document.querySelectorAll('.avatar-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+async function doLogin() {
+  const name = document.getElementById('login-name').value.trim();
+  if (!name) { toast('Digite seu nome!'); return; }
+  currentUser = { name, avatar: selectedAvatar };
+  localStorage.setItem('mpt_user', JSON.stringify(currentUser));
+  await loadUserProgress(name);
+  document.getElementById('home-username').textContent = name;
+  document.getElementById('home-avatar').textContent = selectedAvatar;
+  updateProgress();
+  show('s-home');
+}
+
+function doLogout() {
+  localStorage.removeItem('mpt_user');
+  currentUser = null;
+  progressCache = {};
+  document.getElementById('login-name').value = '';
+  show('s-login');
+}
+
+// ══════════════════════════════════════════════
+// NAV
+// ══════════════════════════════════════════════
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function showLoading(v) {
+  document.getElementById('loading').style.display = v ? 'flex' : 'none';
+}
+
+// ══════════════════════════════════════════════
+// PROGRESS
+// ══════════════════════════════════════════════
+function updateProgress() {
+  const studied = QUESTIONS.filter(q=>getConf(q.id)!=='none').length;
+  const total = QUESTIONS.length;
+  const pct = Math.round(studied/total*100);
+  document.getElementById('home-pct').textContent = pct+'%';
+  document.getElementById('home-bar').style.width = pct+'%';
+  document.getElementById('home-stats').textContent = `${studied} de ${total} perguntas avaliadas`;
+  renderHomeThemes();
+}
+
+// ══════════════════════════════════════════════
+// HOME THEMES
+// ══════════════════════════════════════════════
+function renderHomeThemes() {
+  const c = document.getElementById('home-themes');
+  c.innerHTML = THEMES.map(t => {
+    const qs = QUESTIONS.filter(q=>q.theme===t.id);
+    const done = qs.filter(q=>getConf(q.id)!=='none').length;
+    const pct = Math.round(done/qs.length*100);
+    return `<div class="theme-item" onclick="openTheme('${t.id}')">
+      <div class="theme-dot" style="background:${t.color}">${t.icon}</div>
+      <div class="theme-info">
+        <div class="theme-name">${t.name}</div>
+        <div class="theme-count">${done}/${qs.length} avaliadas · ${pct}%</div>
+      </div>
+      <div class="theme-arrow">›</div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+// STUDY / THEMES
+// ══════════════════════════════════════════════
+function goStudy() {
+  const c = document.getElementById('themes-list');
+  c.innerHTML = THEMES.map(t => {
+    const qs = QUESTIONS.filter(q=>q.theme===t.id);
+    const done = qs.filter(q=>getConf(q.id)!=='none').length;
+    const pct = Math.round(done/qs.length*100);
+    return `<div class="theme-item" onclick="openTheme('${t.id}')">
+      <div class="theme-dot" style="background:${t.color}">${t.icon}</div>
+      <div class="theme-info">
+        <div class="theme-name">${t.name}</div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
+          <div style="flex:1;height:5px;background:var(--border);border-radius:99px;overflow:hidden">
+            <div style="width:${pct}%;height:100%;background:var(--red);border-radius:99px"></div>
+          </div>
+          <span style="font-size:12px;color:var(--text);font-weight:700;white-space:nowrap">${done}/${qs.length}</span>
+        </div>
+      </div>
+      <div class="theme-arrow">›</div>
+    </div>`;
+  }).join('');
+  show('s-themes');
+}
+
+function openTheme(tid) {
+  currentThemeId = tid;
+  const t = THEMES.find(t=>t.id===tid);
+  document.getElementById('q-list-title').textContent = t.name;
+  renderQuestions(tid);
+  show('s-questions');
+}
+
+function confColor(c) { return {none:'#D9D9D9',low:'#E30613',mid:'#f59e0b',high:'#16a34a'}[c]||'#D9D9D9'; }
+function confLabel(c) { return {none:'Não avaliada',low:'Baixa',mid:'Média',high:'Alta'}[c]||'Não avaliada'; }
+
+function renderQuestions(tid) {
+  const qs = QUESTIONS.filter(q=>q.theme===tid);
+  const c = document.getElementById('questions-list');
+  c.innerHTML = qs.map(q => {
+    const conf = getConf(q.id);
+    return `<div class="question-card">
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        <div class="q-confidence-dot" style="background:${confColor(conf)};margin-top:5px"></div>
+        <div class="question-text">${q.q}</div>
+      </div>
+      <div class="question-actions">
+        <button class="btn btn-secondary btn-sm" onclick="openDetail('${q.id}','themes')">Ver resposta</button>
+        <button class="btn btn-sm" style="background:#fde8e9;color:var(--red);border:none;font-family:Montserrat,sans-serif;font-weight:700;flex:none;padding:0 14px;min-height:38px;border-radius:10px;cursor:pointer" onclick="quickConf('${q.id}','low')">📌 Estudar</button>
+        <button class="btn btn-sm" style="background:#e6f9f0;color:#16a34a;border:none;font-family:Montserrat,sans-serif;font-weight:700;flex:none;padding:0 14px;min-height:38px;border-radius:10px;cursor:pointer" onclick="quickConf('${q.id}','high')">✓</button>
+      </div>
+      <div style="font-size:13px;font-weight:600;color:${confColor(conf)}">${confLabel(conf)}</div>
+    </div>`;
+  }).join('');
+}
+
+async function quickConf(qid, val) {
+  await saveProgress(qid, val, getNote(qid));
+  renderQuestions(currentThemeId);
+  updateProgress();
+  toast(val==='high' ? 'Marcado como dominado!' : 'Marcado para estudar');
+}
+
+// ══════════════════════════════════════════════
+// DETAIL
+// ══════════════════════════════════════════════
+function openDetail(qid, from) {
+  currentQId = qid;
+  const q = QUESTIONS.find(q=>q.id===qid);
+  document.getElementById('detail-q').textContent = q.q;
+  document.getElementById('detail-a').textContent = q.a;
+  document.getElementById('detail-answer').classList.remove('visible');
+  document.getElementById('detail-reveal-btn').style.display = '';
+  document.getElementById('detail-notes').value = getNote(qid);
+  const conf = getConf(qid);
+  document.querySelectorAll('#s-detail .conf-btn').forEach(b=>b.classList.toggle('selected', b.dataset.val===conf));
+  document.getElementById('detail-back').onclick = () => show(from==='themes'?'s-questions':'s-sim');
+  show('s-detail');
+}
+
+function revealAnswer() {
+  document.getElementById('detail-answer').classList.add('visible');
+  document.getElementById('detail-reveal-btn').style.display = 'none';
+}
+
+function saveNote() {
+  clearTimeout(noteTimeout);
+  noteTimeout = setTimeout(async () => {
+    if (!currentQId) return;
+    const note = document.getElementById('detail-notes').value;
+    await saveProgress(currentQId, getConf(currentQId), note);
+  }, 800);
+}
+
+async function setConf(val) {
+  if (!currentQId) return;
+  await saveProgress(currentQId, val, getNote(currentQId));
+  document.querySelectorAll('#s-detail .conf-btn').forEach(b=>b.classList.toggle('selected', b.dataset.val===val));
+  updateProgress();
+  if (currentThemeId) renderQuestions(currentThemeId);
+  toast('Confiança salva!');
+}
+
+// ══════════════════════════════════════════════
+// SIMULATION
+// ══════════════════════════════════════════════
+let simPool = [], simIdx = 0;
+
+function goSim() {
+  simPool = shuffle([...QUESTIONS]);
+  simIdx = 0;
+  loadSimQ();
+  show('s-sim');
+}
+
+function loadSimQ() {
+  const q = simPool[simIdx];
+  const t = THEMES.find(t=>t.id===q.theme);
+  document.getElementById('sim-theme-label').textContent = t.icon + '  ' + t.name;
+  document.getElementById('sim-q').textContent = q.q;
+  document.getElementById('sim-a').textContent = q.a;
+  document.getElementById('sim-answer').classList.remove('visible');
+  document.getElementById('sim-conf-wrap').style.display = 'none';
+  document.getElementById('sim-reveal-btn').style.display = '';
+  document.getElementById('sim-next-btn').style.display = 'none';
+  document.getElementById('sim-count').textContent = `${simIdx+1}/${simPool.length}`;
+  document.querySelectorAll('#sim-conf-wrap .conf-btn').forEach(b=>b.classList.remove('selected'));
+}
+
+function simReveal() {
+  document.getElementById('sim-answer').classList.add('visible');
+  document.getElementById('sim-conf-wrap').style.display = 'block';
+  document.getElementById('sim-reveal-btn').style.display = 'none';
+  document.getElementById('sim-next-btn').style.display = '';
+}
+
+async function simSetConf(val) {
+  const q = simPool[simIdx];
+  await saveProgress(q.id, val, getNote(q.id));
+  document.querySelectorAll('#sim-conf-wrap .conf-btn').forEach(b=>b.classList.toggle('selected', b.dataset.val===val));
+  updateProgress();
+  toast('Confiança salva');
+}
+
+function simNext() { simIdx = (simIdx+1) % simPool.length; loadSimQ(); }
+
+// ══════════════════════════════════════════════
+// PRESSURE
+// ══════════════════════════════════════════════
+let pressurePool = [], pressureIdx = 0, pressureTimer = null, pressureSeconds = 30;
+
+function goPressure() {
+  pressurePool = shuffle([...QUESTIONS]);
+  pressureIdx = 0;
+  loadPressureQ();
+  show('s-pressure');
+}
+
+function loadPressureQ() {
+  clearInterval(pressureTimer);
+  pressureSeconds = 30;
+  const q = pressurePool[pressureIdx];
+  document.getElementById('pressure-q').textContent = q.q;
+  document.getElementById('pressure-a').textContent = q.a;
+  document.getElementById('pressure-answer').classList.remove('visible');
+  document.getElementById('pressure-count').textContent = `${pressureIdx+1}/${pressurePool.length}`;
+  updateTimerUI(30);
+  pressureTimer = setInterval(pressureTick, 1000);
+}
+
+function pressureTick() {
+  pressureSeconds--;
+  updateTimerUI(pressureSeconds);
+  if (pressureSeconds <= 0) {
+    clearInterval(pressureTimer);
+    document.getElementById('pressure-answer').classList.add('visible');
+  }
+}
+
+function updateTimerUI(secs) {
+  document.getElementById('timer-num').textContent = secs;
+  const offset = 314 * (1 - secs/30);
+  const circle = document.getElementById('timer-ring-circle');
+  circle.style.strokeDashoffset = offset;
+  circle.style.stroke = secs<=10?'#E30613':secs<=20?'#f59e0b':'#16a34a';
+}
+
+function pressureNext() { clearInterval(pressureTimer); pressureIdx=(pressureIdx+1)%pressurePool.length; loadPressureQ(); }
+function stopPressure() { clearInterval(pressureTimer); show('s-home'); }
+
+// ══════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════
+function openDashboard() {
+  const total = QUESTIONS.length;
+  const studied = QUESTIONS.filter(q=>getConf(q.id)!=='none').length;
+  const high = QUESTIONS.filter(q=>getConf(q.id)==='high').length;
+  const low = QUESTIONS.filter(q=>getConf(q.id)==='low').length;
+  const pct = Math.round(studied/total*100);
+  const avgConf = studied===0 ? 0 : Math.round((high*100 + QUESTIONS.filter(q=>getConf(q.id)==='mid').length*60 + low*20)/studied);
+
+  const themeScores = THEMES.map(t=>{
+    const qs = QUESTIONS.filter(q=>q.theme===t.id);
+    const score = qs.reduce((acc,q)=>{
+      const c=getConf(q.id); return acc+(c==='high'?100:c==='mid'?60:c==='low'?20:0);
+    },0)/qs.length;
+    return {...t, score:Math.round(score)};
+  }).sort((a,b)=>a.score-b.score);
+
+  document.getElementById('dashboard-content').innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:28px">${currentUser.avatar}</span>
+      <div>
+        <div style="font-size:18px;font-weight:700;color:var(--black)">${currentUser.name}</div>
+        <div style="font-size:13px;color:var(--text)">Progresso individual</div>
+      </div>
+    </div>
+    <div>
+      <div class="section-title">Visão geral</div>
+      <div class="stat-grid">
+        <div class="stat-card accent"><div class="stat-value">${pct}%</div><div class="stat-label">Perguntas avaliadas</div></div>
+        <div class="stat-card"><div class="stat-value">${avgConf}%</div><div class="stat-label">Confiança média</div></div>
+        <div class="stat-card"><div class="stat-value" style="color:#16a34a">${high}</div><div class="stat-label">Alta confiança</div></div>
+        <div class="stat-card"><div class="stat-value" style="color:var(--red)">${low}</div><div class="stat-label">Baixa confiança</div></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-title">Temas por preparo</div>
+      <div class="card">
+        ${themeScores.map(t=>`
+          <div class="weak-item">
+            <span style="font-size:18px">${t.icon}</span>
+            <div class="weak-name">${t.name}</div>
+            <div class="weak-bar-wrap"><div class="weak-bar" style="width:${t.score}%;background:${t.score>=70?'#16a34a':t.score>=40?'#f59e0b':'var(--red)'}"></div></div>
+            <span style="font-size:12px;font-weight:700;color:${t.score>=70?'#16a34a':t.score>=40?'#b45309':'var(--red)'};width:32px;text-align:right">${t.score}%</span>
+          </div>`).join('')}
+      </div>
+    </div>
+  `;
+  show('s-dashboard');
+}
+
+// ══════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════
+function shuffle(arr) {
+  for (let i=arr.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]; }
+  return arr;
+}
+let toastTimeout;
+function toast(msg) {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(toastTimeout);
+  toastTimeout=setTimeout(()=>el.classList.remove('show'),2000);
+}
+
+// ══════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════
+async function init() {
+  initAvatarGrid();
+  showLoading(true);
+  let saved = null;
+  try { saved = localStorage.getItem('mpt_user'); } catch(e) {}
+  if (saved) {
+    try {
+      currentUser = JSON.parse(saved);
+      if (!currentUser || !currentUser.name) throw new Error('invalid');
+      await loadUserProgress(currentUser.name);
+      document.getElementById('home-username').textContent = currentUser.name;
+      document.getElementById('home-avatar').textContent = currentUser.avatar || '🧑‍💼';
+      updateProgress();
+      showLoading(false);
+      show('s-home');
+      return;
+    } catch(e) {
+      currentUser = null;
+      try { localStorage.removeItem('mpt_user'); } catch(e2) {}
+    }
+  }
+  showLoading(false);
+  show('s-login');
+}
+
+init();
+</script>
+</body>
+</html>
